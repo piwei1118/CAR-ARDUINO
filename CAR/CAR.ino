@@ -102,11 +102,30 @@ void loop() {
     ps2x.read_gamepad();  //讀取手把狀態
     delay(10);
     
-    int raw_rx = ps2x.Analog(PSS_RX) /2.5 ;
-    Serial.println(raw_rx);
-    
-     int rx = map(raw_rx , 0, 100, 170, 10);
-     num_6.write(rx);
+   int now_ly = num_5.read();
+   Serial.println(now_ly);
+
+   
+   
+    int raw_rx = ps2x.Analog(PSS_RX) /2.5 ;// MAP 攝氏華氏
+    //Serial.print(raw_rx);
+    //Serial.print("   ");
+     int rx = map(raw_rx , 0, 100, 170, 10); 
+     //num_6.write(rx);
+
+    int raw_ly = ps2x.Analog(PSS_LY) /2.5 ; 
+    //Serial.println(raw_ly);
+      int ly = map(raw_ly , 0, 100, 25, 125); 
+      //num_5.write(ly);
+      
+    for(int test_ly = 125; test_ly >=25 ; test_ly -= 10){
+      num_5.write(test_ly);
+      delay(5);      
+    }
+    for(int test_ly = 25; test_ly <= 125 ; test_ly += 10){
+      num_5.write(test_ly);
+      delay(5);
+    }
  
    if(ps2x.Button(PSB_PAD_UP)){
      forward();
