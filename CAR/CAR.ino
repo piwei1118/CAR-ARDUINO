@@ -4,8 +4,14 @@
 //C語言有public與private之分
 //private是作者本人測試 或是public程式會使用的"原始程式"
 //private 像是ev3程式的藍色方塊馬達
+//milli
 PS2X ps2x; 
 int error;
+
+//smt_rx = start movinig time rx, and so on
+int old_raw_rx = 5;
+unsigned long smt_rx , duration_rx;
+int read_rx=90, rx=90;
 
 #include <Servo.h>
   Servo num_1;
@@ -34,20 +40,24 @@ void setup(){
   num_4.attach(11);
   num_5.attach(12);
   num_6.attach(13);
+
+
+
+
 }
 void forward(){
 
   for(int i = 46; i < 54 ; i+=2){  // i = i = 1 or i++ or i+=1
-  digitalWrite (i, HIGH);
-  digitalWrite (i+1, LOW);
+    digitalWrite (i, HIGH);
+    digitalWrite (i+1, LOW);
 
   }
 }
 void backward(){
 
   for(int i = 46; i < 54 ; i+=2){
-  digitalWrite (i, LOW);
-  digitalWrite (i+1, HIGH);
+    digitalWrite (i, LOW);
+    digitalWrite (i+1, HIGH);
   }
 }
 void right(){
@@ -55,16 +65,16 @@ void right(){
   int j = 1;
   for(int i = 46; i < 54 ; i+=2){
 
-  if(j % 2 == 1 ){  //模數除法% 用法:11除以3於2: 11 % 3 = 2
-  digitalWrite (i, HIGH);
-  digitalWrite (i+1, LOW);  
-}
+    if(j % 2 == 1 ){  //模數除法% 用法:11除以3於2: 11 % 3 = 2
+      digitalWrite (i, HIGH);
+      digitalWrite (i+1, LOW);  
+    }
 
-  else{
-  digitalWrite (i, LOW);
-  digitalWrite (i+1, HIGH);  
-}
-  j++;
+    else{
+      digitalWrite (i, LOW);
+      digitalWrite (i+1, HIGH);  
+    }
+    j++;
 
   }
 }
@@ -73,16 +83,16 @@ void left(){
   int j = 1;
   for(int i = 46; i < 54 ; i+=2){
 
-  if(j % 2 == 1 ){  //模數除法% 用法:11除以3於2: 11%3 = 2
-  digitalWrite (i+1, HIGH);
-  digitalWrite (i, LOW);  
-}
+    if(j % 2 == 1 ){  //模數除法% 用法:11除以3於2: 11%3 = 2
+      digitalWrite (i+1, HIGH);
+      digitalWrite (i, LOW);  
+    }
 
-  else{
-  digitalWrite (i+1, LOW);
-  digitalWrite (i, HIGH);  
-}
-  j++;
+    else{
+      digitalWrite (i+1, LOW);
+      digitalWrite (i, HIGH);  
+    }
+    j++;
 
   }
 }
@@ -94,63 +104,10 @@ void stop(){
   if(j % 2 == 1 ){  //模數除法% 用法:11除以3於2: 11%3 = 2
   digitalWrite (i, LOW);
   digitalWrite (i+1, LOW);  
-}
-  }
-}
-void loop() {
-
-    ps2x.read_gamepad();  //讀取手把狀態
-    delay(10);
-    
-   int now_ly = num_5.read();
-   Serial.println(now_ly);
-
-   
-   
-    int raw_rx = ps2x.Analog(PSS_RX) /2.5 ;// MAP 攝氏華氏
-    //Serial.print(raw_rx);
-    //Serial.print("   ");
-     int rx = map(raw_rx , 0, 100, 170, 10); 
-     //num_6.write(rx);
-
-    int raw_ly = ps2x.Analog(PSS_LY) /2.5 ; 
-    //Serial.println(raw_ly);
-      int ly = map(raw_ly , 0, 100, 25, 125); 
-      //num_5.write(ly);
-      
-    for(int test_ly = 125; test_ly >=25 ; test_ly -= 10){
-      num_5.write(test_ly);
-      delay(5);      
     }
-    for(int test_ly = 25; test_ly <= 125 ; test_ly += 10){
-      num_5.write(test_ly);
-      delay(5);
-    }
- 
-   if(ps2x.Button(PSB_PAD_UP)){
-     forward();
-   }
-   else if(ps2x.Button(PSB_PAD_RIGHT)){
-     right();
   }
-   else if(ps2x.Button(PSB_PAD_LEFT)){
-     left();
-  }
-   else if(ps2x.Button(PSB_PAD_DOWN)){
-     backward();
-  }
-   else if(ps2x.Button(PSB_R1)){
-     turn_right();
-   }
-   else if(ps2x.Button(PSB_L1)){
-     turn_left();
-   }
-   else { 
-     stop();
-   }
 }
 void turn_right(){
-
    int j = 1;
    for(int i = 46; i < 54 ; i+=2){
 
@@ -179,4 +136,54 @@ void turn_left(){
       }
       j++;
   }
+}
+void loop() {
+
+    ps2x.read_gamepad();  //讀取手把狀態
+    delay(10);
+    
+   int now_ly = num_5.read();
+   Serial.println(now_ly);
+
+   
+   
+    int raw_rx = ps2x.Analog(PSS_RX) /25 ;// MAP 攝氏華氏
+      
+    if (old_raw_rx != raw_rx){
+     smt_rx = millis();
+     rx = map(raw_rx , 0, 10, 170, 10);//targat angle
+     read_rx = num_6.read();
+    }
+     duration_rx = millis() - smt_rx;
+
+     int output_rx = map(duration_rx, 0, 100, read_rx, rx);
+     num_6.write(output_rx);
+
+    int raw_ly = ps2x.Analog(PSS_LY) /25 ; 
+    //Serial.println(raw_ly);
+      int ly = map(raw_ly , 0, 100, 25, 125); 
+      //num_5.write(ly);
+ 
+   if(ps2x.Button(PSB_PAD_UP)){
+     forward();
+   }
+   else if(ps2x.Button(PSB_PAD_RIGHT)){
+     right();
+  }
+   else if(ps2x.Button(PSB_PAD_LEFT)){
+     left();
+  }
+   else if(ps2x.Button(PSB_PAD_DOWN)){
+     backward();
+  }
+   else if(ps2x.Button(PSB_R1)){
+     turn_right();
+   }
+   else if(ps2x.Button(PSB_L1)){
+     turn_left();
+   }
+   else { 
+     stop();
+   }
+  
 }
