@@ -21,17 +21,18 @@ int read_rx=90, rx=90;
   Servo num_5;
   Servo num_6;
 void setup(){
-//46-53
+//46-53  
+  Serial.begin(57600);
+  Serial.println("Start");
   for (int x = 46 ; x < 54 ; x = x + 1){
  
   pinMode( x , OUTPUT); 
   }
-  Serial.begin(57600);
   do { 
     //GamePad(clock, command, attention, data,)
     error = ps2x.config_gamepad(14, 16, 15, 17,true,true);   //這行要和接線對應正確
     if (error == 0) { Serial.print("Gamepad found!");break; } 
-    else { delay(100); } 
+    else { delay(100); Serial.print("..");} 
   } while (1);
 
   num_1.attach(8);
@@ -40,9 +41,6 @@ void setup(){
   num_4.attach(11);
   num_5.attach(12);
   num_6.attach(13);
-
-
-
 
 }
 void forward(){
@@ -141,23 +139,28 @@ void loop() {
 
     ps2x.read_gamepad();  //讀取手把狀態
     delay(10);
-    
-   int now_ly = num_5.read();
-   Serial.println(now_ly);
 
-   
-   
-    int raw_rx = ps2x.Analog(PSS_RX) /25 ;// MAP 攝氏華氏
-      
-    if (old_raw_rx != raw_rx){
+    
+   int now_rx = num_6.read();
+
+     int raw_rx = ps2x.Analog(PSS_RX) /25;// MAP 攝氏華氏
+ 
+    if (old_raw_rx != raw_rx){ //raw_rx蘑菇頭數值
      smt_rx = millis();
      rx = map(raw_rx , 0, 10, 170, 10);//targat angle
      read_rx = num_6.read();
+     old_raw_rx = raw_rx;
     }
      duration_rx = millis() - smt_rx;
-
-     int output_rx = map(duration_rx, 0, 100, read_rx, rx);
+     
+     if(duration_rx < 500){
+     int output_rx = map(duration_rx, 0, 500, read_rx, rx);
      num_6.write(output_rx);
+    }  
+     Serial.print (read_rx);
+     Serial.print (" ");
+     Serial.println (rx);
+
 
     int raw_ly = ps2x.Analog(PSS_LY) /25 ; 
     //Serial.println(raw_ly);
