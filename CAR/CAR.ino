@@ -10,23 +10,28 @@ int error;
 
 //smt_rx = start movinig time rx, and so on
 int old_raw_rx = 5;
-unsigned long smt_rx , duration_rx;//f
-int read_rx=90, rx=90;
+int old_raw_ly = 5;
 
 #include "MOVE.h"
  MOVE move(46);
 #include <Servo.h>
 
 #include "Arm.h"
-ARM arm_1(8 , 90 ,90);
-ARM arm_2(9 , 90 ,90);
-ARM arm_3(10, 90 ,90);
-ARM arm_4(11, 90 ,90);
-ARM arm_5(12, 25, 125);
-ARM arm_6(13, 10, 170);
+ARM arm_1;
+ARM arm_2;
+ARM arm_3;
+ARM arm_4;
+ARM arm_5;
+ARM arm_6;
 
 
 void setup(){
+ arm_6.link(13, 170, 10);
+ arm_5.link(12, 25, 125);
+ arm_4.link(11, 90 ,90);
+ arm_3.link(10, 90 ,90);
+ arm_2.link(9 , 90 ,90);
+ arm_1.link(8 , 90 ,90);
 //46-53  
   Serial.begin(57600);
   Serial.println("Start");
@@ -41,8 +46,6 @@ void setup(){
     else { delay(100); Serial.print("..");} 
   } while (1);
 
-  
-
 }
 void loop() {
 
@@ -50,7 +53,11 @@ void loop() {
     delay(10);
     
      int raw_rx = ps2x.Analog(PSS_RX) /25;// MAP 攝氏華氏
- 
+     int raw_ly = ps2x.Analog(PSS_LY) /25;
+    if (old_raw_ly != raw_ly){ //raw_rx蘑菇頭數值
+     arm_5.run(raw_ly);
+     old_raw_ly = raw_ly;
+    }
     if (old_raw_rx != raw_rx){ //raw_rx蘑菇頭數值
      arm_6.run(raw_rx);
      old_raw_rx = raw_rx;
