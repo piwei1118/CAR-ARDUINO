@@ -9,11 +9,11 @@ PS2X ps2x;
 int error;
 
 //smt_rx = start movinig time rx, and so on
-int old_raw_rx = 5;
-int old_raw_ly = 5;
-
+int old_raw_rx = 9;
+int old_raw_ly = 9;
+int old_raw_ry = 9;
+int old_raw_lx = 9;
 #include "MOVE.h"
- MOVE move(46);
 #include <Servo.h>
 
 #include "Arm.h"
@@ -24,14 +24,25 @@ ARM arm_4;
 ARM arm_5;
 ARM arm_6;
 
+//define 定義 不同於變數他是不可變的 [常數]
+//#define check_count 3;
+static int check_count = 2;
+//static 靜態 變數
+int ps2check[10] = {0,0,0,0,0,0,0,0,0,0};
+//up , down , left , right , R1 , L1 , RX , RY , LY , LX 
+int psslast[4] = {9,9,9,9};
+//上一次的紀錄
+bool psblast[6] = {0, 0, 0, 0, 0, 0};
+
+MOVE move(46);
 
 void setup(){
- arm_6.link(13, 170, 10);
- arm_5.link(12, 25, 125);
- arm_4.link(11, 90 ,90);
- arm_3.link(10, 90 ,90);
- arm_2.link(9 , 90 ,90);
- arm_1.link(8 , 90 ,90);
+ arm_6.link(8, 170, 10);
+ arm_5.link(9, 25, 125);
+ arm_4.link(10, 0 ,180);
+ arm_3.link(11, 10 ,160);
+ arm_2.link(12 , 0 ,180);
+ arm_1.link(13, 0 ,180);
 //46-53  
   Serial.begin(57600);
   Serial.println("Start");
@@ -51,38 +62,89 @@ void loop() {
 
     ps2x.read_gamepad();  //讀取手把狀態
     delay(10);
+
+   //check 歸零
+   if(ps2x.Button(PSB_PAD_UP) != psblast[0]) ps2check[0] = 0;
+   if(ps2x.Button(PSB_PAD_DOWN) != psblast[1]) ps2check[1] = 0;
+   if(ps2x.Button(PSB_PAD_LEFT) != psblast[2]) ps2check[2] = 0;
+   if(ps2x.Button(PSB_PAD_RIGHT) != psblast[3]) ps2check[3] = 0;
+   if(ps2x.Button(PSB_L1) != psblast[4]) ps2check[4] = 0;
+   if(ps2x.Button(PSB_R1) != psblast[5]) ps2check[5] = 0;
+
+     int raw_rx = ps2x.Analog(PSS_RX) /13;// MAP 攝氏華氏
+     int raw_ly= ps2x.Analog(PSS_LY) /13;
+     int raw_ry = ps2x.Analog(PSS_RY) /13;
+     int raw_lx = (ps2x.Analog(PSS_LX) /13) +1;
+  
+   if(raw_lx != psslast[0]) ps2check[6] = 0;
+   if(raw_ly != psslast[1]) ps2check[7] = 0;
+   if(raw_rx != psslast[2]) ps2check[8] = 0;
+   if(raw_ry != psslast[3]) ps2check[9] = 0;
     
-     int raw_rx = ps2x.Analog(PSS_RX) /25;// MAP 攝氏華氏
-     int raw_ly = ps2x.Analog(PSS_LY) /25;
-    if (old_raw_ly != raw_ly){ //raw_rx蘑菇頭數值
-     arm_5.run(raw_ly);
+    if ((old_raw_ly != raw_ly) && (ps2check[7] > check_count)){ //raw_ly蘑菇頭數值
+     arm_3.run(raw_ly);
      old_raw_ly = raw_ly;
     }
-    if (old_raw_rx != raw_rx){ //raw_rx蘑菇頭數值
+    if ((old_raw_lx != raw_lx) && (ps2check[6] > check_count)){ //raw_lx蘑菇頭數值
+     arm_2.run(raw_lx);
+     old_raw_lx = raw_lx;
+    }
+    if ((old_raw_ry != raw_ry) && (ps2check[9] > check_count)){ //raw_ry蘑菇頭數值
+     arm_5.run(raw_ry);
+     old_raw_ry = raw_ry;
+    }
+    
+    if ((old_raw_rx != raw_rx) && (ps2check[8] > check_count)){ //raw_rx蘑菇頭數值
      arm_6.run(raw_rx);
      old_raw_rx = raw_rx;
     }
- 
-   if(ps2x.Button(PSB_PAD_UP)){
-     move.forward();
-   }
-   else if(ps2x.Button(PSB_PAD_RIGHT)){
-     move.right();
-  }
-   else if(ps2x.Button(PSB_PAD_LEFT)){
-     move.left();
-  }
-   else if(ps2x.Button(PSB_PAD_DOWN)){
-     move.backward();
-  }
-   else if(ps2x.Button(PSB_R1)){
+    //check先確定有沒有被按過 所以需要放在前後 分別是check歸零 check累計 
+
+   
+     if(ps2x.Button(PSB_PAD_UP) && ps2check[0] > check_count){
+     move.forward(); } 
+     else if(ps2x.Button(PSB_PAD_DOWN)&& ps2check[1] > check_count){
+     move.backward(); }
+
+     else if(ps2x.Button(PSB_PAD_LEFT)&& ps2check[2] > check_count){
+     move.left(); }
+     
+     else if(ps2x.Button(PSB_PAD_RIGHT)&& ps2check[3] > check_count){
+     move.right(); }
+
+   else if(ps2x.Button(PSB_L1)&& ps2check[4] > check_count){
+     move.turn_left(); }
+   
+   else if(ps2x.Button(PSB_R1)&& ps2check[5] > check_count){
      move.turn_right();
-   }
-   else if(ps2x.Button(PSB_L1)){
-     move.turn_left();
    }
    else { 
      move.stop();
    }
-  
+
+  //check累加
+   if(ps2x.Button(PSB_PAD_UP) == psblast[0]) ps2check[0] ++;
+   if(ps2x.Button(PSB_PAD_DOWN) == psblast[1]) ps2check[1] ++;
+   if(ps2x.Button(PSB_PAD_LEFT) == psblast[2]) ps2check[2] ++;
+   if(ps2x.Button(PSB_PAD_RIGHT) == psblast[3]) ps2check[3] ++;
+   if(ps2x.Button(PSB_L1) == psblast[4]) ps2check[4] ++;
+   if(ps2x.Button(PSB_R1) == psblast[5]) ps2check[5] ++;
+
+   if(raw_lx == psslast[0]) ps2check[6] ++;
+   if(raw_ly == psslast[1]) ps2check[7] ++;
+   if(raw_rx == psslast[2]) ps2check[8] ++;
+   if(raw_ry == psslast[3]) ps2check[9] ++;
+   
+
+   psblast[0] = ps2x.Button(PSB_PAD_UP);
+   psblast[1] = ps2x.Button(PSB_PAD_DOWN);
+   psblast[2] = ps2x.Button(PSB_PAD_LEFT);
+   psblast[3] = ps2x.Button(PSB_PAD_RIGHT);
+   psblast[4] = ps2x.Button(PSB_L1);
+   psblast[5] = ps2x.Button(PSB_R1);
+
+   psslast[0] = raw_lx ;
+   psslast[1] = raw_ly ;
+   psslast[2] = raw_rx ;
+   psslast[3] = raw_ry ;
 }
